@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
+<script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  #dos{position:absolute;inset:0}
+  .pad{position:absolute;bottom:3vh;display:flex;gap:1.5vw;z-index:10}
+  #left{left:2vw} #right{right:2vw}
+  .btn{width:14vmin;height:14vmin;border-radius:50%;border:2px solid #fff6;background:#ffffff1f;
+       color:#fff;font:700 5vmin sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1}
+  .btn.on{background:#ffffff66}
+  .small{font-size:2.6vmin}
+  #top{position:absolute;top:2vh;right:2vw;display:flex;gap:1.5vw;z-index:10}
+  #top .btn{width:9vmin;height:9vmin;font-size:2.4vmin}
+  body.clean .btn{background:none;border-color:transparent;color:transparent}
+  #tg{position:absolute;top:0;left:0;width:8vmin;height:8vmin;z-index:20}
+</style></head>
+<body>
+<div id="dos"></div>
+<div id="tg"></div>
+<div id="top">
+  <div class="btn" data-key="Escape" data-code="27">ESC</div>
+  <div class="btn" data-key="Enter" data-code="13">ENTER</div>
+</div>
+<div class="pad" id="left">
+  <div class="btn" data-key="ArrowLeft" data-code="37">◀</div>
+  <div class="btn" data-key="ArrowRight" data-code="39">▶</div>
+</div>
+<div class="pad" id="right">
+  <div class="btn" data-key="ArrowUp" data-code="38">▲</div>
+  <div class="btn" data-key="ArrowDown" data-code="40">▼</div>
+  <div class="btn small" data-key="Control" data-code="17">CTRL<br>jump</div>
+  <div class="btn small" data-key="Alt" data-code="18">ALT<br>fire</div>
+</div>
+<script>
+const codes = {ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
+               Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter"};
+
+Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true, kiosk: true});
+
+function sendKey(type, key, kc) {
+  const target = document.querySelector("#dos canvas") || document.querySelector("#dos") || document;
+  const ev = new KeyboardEvent(type, {key, code: codes[key], keyCode: kc, which: kc, bubbles: true, cancelable: true});
+  Object.defineProperty(ev, "keyCode", {get: () => kc});
+  Object.defineProperty(ev, "which", {get: () => kc});
+  target.dispatchEvent(ev);
+}
+
+document.querySelectorAll(".btn").forEach(b => {
+  const k = b.dataset.key, c = +b.dataset.code;
+  const down = e => { e.preventDefault(); b.classList.add("on"); sendKey("keydown", k, c); };
+  const up   = e => { e.preventDefault(); b.classList.remove("on"); sendKey("keyup", k, c); };
+  b.addEventListener("touchstart", down, {passive:false});
+  b.addEventListener("touchend", up, {passive:false});
+  b.addEventListener("touchcancel", up, {passive:false});
+});
+document.getElementById("tg").addEventListener("touchstart", () => document.body.classList.toggle("clean"));
+</script>
+</body></html>
