@@ -36,15 +36,15 @@
 <div id="stick"><div id="knob"></div></div>
 
 <div id="kright">
-  <div class="kb ksm" data-key="Control" data-code="17">CTRL<br>jump</div>
+  <div class="kb ksm" data-key="Space" data-code="32">SPACE<br>jump</div>
   <div class="kb ksm" data-key="Alt" data-code="18">ALT<br>fire</div>
 </div>
 
 <script>
 (function(){
-const codes = {ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
+const codes = {Space:"Space",ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
                Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter",F1:"F1",F2:"F2",F3:"F3",F4:"F4"};
-const glfw = {ArrowLeft:263,ArrowRight:262,ArrowDown:264,ArrowUp:265,Escape:256,Enter:257,
+const glfw = {Space:32,ArrowLeft:263,ArrowRight:262,ArrowDown:264,ArrowUp:265,Escape:256,Enter:257,
               F1:290,F2:291,F3:292,F4:293,Control:341,Alt:342};
 let ci = null;
 
@@ -65,7 +65,7 @@ function sendKey(type, key, kc) {
   if (ci && glfw[key]) { ci.sendKeyEvent(glfw[key], type === "keydown"); return; }
   const down = type === "keydown";
   const target = document.querySelector("#dos canvas") || document.querySelector("#dos") || document;
-  const ev = new KeyboardEvent(type, {key, code: codes[key], keyCode: kc, which: kc,
+  const ev = new KeyboardEvent(type, {key: key === "Space" ? " " : key, code: codes[key], keyCode: kc, which: kc,
     ctrlKey: key === "Control" && down, altKey: key === "Alt" && down,
     bubbles: true, cancelable: true});
   Object.defineProperty(ev, "keyCode", {get: () => kc});
