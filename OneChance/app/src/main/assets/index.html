@@ -10,14 +10,15 @@
   .kb.kon{background:#ffffff66}
   .ksm{font-size:2.6vmin}
   #kright{position:absolute;right:2vw;bottom:3vh;display:flex;gap:1.5vw;z-index:10}
+  #kleft{position:absolute;left:2vw;bottom:3vh;display:grid;grid-template-columns:repeat(3,14vmin);
+         grid-template-rows:repeat(2,14vmin);gap:1.5vmin;z-index:10}
+  #kleft [data-key="ArrowUp"]{grid-column:2;grid-row:1}
+  #kleft [data-key="ArrowLeft"]{grid-column:1;grid-row:2}
+  #kleft [data-key="ArrowDown"]{grid-column:2;grid-row:2}
+  #kleft [data-key="ArrowRight"]{grid-column:3;grid-row:2}
   #ktop{position:absolute;bottom:calc(3vh + 16vmin);right:2vw;display:flex;gap:1.5vw;z-index:10}
   #ktop .kb{width:9vmin;height:9vmin;font-size:2.4vmin}
-  #stick{position:absolute;left:3vw;bottom:3vh;width:26vmin;height:26vmin;border-radius:50%;
-         background:#ffffff1f;border:2px solid #fff6;z-index:10}
-  #knob{position:absolute;left:50%;top:50%;width:11vmin;height:11vmin;margin:-5.5vmin;
-        border-radius:50%;background:#ffffff66}
-  body.kclean .kb,body.kclean #stick{background:none;border-color:transparent;color:transparent}
-  body.kclean #knob{background:none}
+  body.kclean .kb{background:none;border-color:transparent;color:transparent}
   #ktg{position:absolute;top:0;left:0;width:8vmin;height:8vmin;z-index:20}
 </style></head>
 <body>
@@ -33,7 +34,12 @@
   <div class="kb" data-key="Enter" data-code="13">ENTER</div>
 </div>
 
-<div id="stick"><div id="knob"></div></div>
+<div id="kleft">
+  <div class="kb" data-key="ArrowUp" data-code="38">▲</div>
+  <div class="kb" data-key="ArrowLeft" data-code="37">◀</div>
+  <div class="kb" data-key="ArrowDown" data-code="40">▼</div>
+  <div class="kb" data-key="ArrowRight" data-code="39">▶</div>
+</div>
 
 <div id="kright">
   <div class="kb ksm" data-key="Space" data-code="32">SPACE<br>jump</div>
@@ -73,7 +79,7 @@ function sendKey(type, key, kc) {
   target.dispatchEvent(ev);
 }
 
-// Round buttons (hold at least 150ms so the game's polling sees the key)
+// All buttons (hold at least 150ms so the game's polling sees the key)
 document.querySelectorAll(".kb").forEach(b => {
   const k = b.dataset.key, c = +b.dataset.code;
   let t0 = 0;
@@ -84,32 +90,6 @@ document.querySelectorAll(".kb").forEach(b => {
   b.addEventListener("touchend", up, {passive:false});
   b.addEventListener("touchcancel", up, {passive:false});
 });
-
-// Thumbstick -> arrow keys (tracks its own finger, so the other thumb can press jump/fire)
-(function(){
-  const st = document.getElementById("stick"), kn = document.getElementById("knob");
-  const map = {ArrowLeft:37, ArrowRight:39, ArrowUp:38, ArrowDown:40};
-  const on = {};
-  let id = null;
-  function set(key, v){ if (!!on[key] === v) return; on[key] = v; sendKey(v ? "keydown" : "keyup", key, map[key]); }
-  function find(e){ for (const t of e.touches) if (t.identifier === id) return t; return null; }
-  function move(t){
-    const r = st.getBoundingClientRect();
-    let dx = t.clientX - (r.left + r.width/2), dy = t.clientY - (r.top + r.height/2);
-    const max = r.width/2, len = Math.hypot(dx, dy);
-    if (len > max) { dx *= max/len; dy *= max/len; }
-    kn.style.transform = `translate(${dx}px,${dy}px)`;
-    const dz = max * 0.3;
-    set("ArrowLeft", dx < -dz); set("ArrowRight", dx > dz);
-    set("ArrowUp", dy < -dz);   set("ArrowDown", dy > dz);
-  }
-  function release(){ id = null; kn.style.transform = ""; Object.keys(map).forEach(k => set(k, false)); }
-  st.addEventListener("touchstart", e => { e.preventDefault(); if (id === null) { id = e.changedTouches[0].identifier; move(e.changedTouches[0]); } }, {passive:false});
-  st.addEventListener("touchmove", e => { e.preventDefault(); const t = find(e); if (t) move(t); }, {passive:false});
-  const end = e => { e.preventDefault(); if (!find(e)) release(); };
-  st.addEventListener("touchend", end, {passive:false});
-  st.addEventListener("touchcancel", end, {passive:false});
-})();
 
 // Tap the top-left corner to hide/show the overlay
 document.getElementById("ktg").addEventListener("touchstart", () => document.body.classList.toggle("kclean"));
