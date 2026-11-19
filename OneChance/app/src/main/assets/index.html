@@ -18,9 +18,10 @@
 </style></head>
 <body>
 <div id="dos"></div>
-<pre id="log" style="position:absolute;top:2vh;left:10vmin;right:30vw;margin:0;z-index:30;color:#0f0;font:13px monospace;white-space:pre-wrap;pointer-events:none"></pre>
 <div id="ktg"></div>
 <div id="ktop">
+  <div class="kb" data-key="F1" data-code="112">F1</div>
+  <div class="kb" data-key="F2" data-code="113">F2</div>
   <div class="kb" data-key="Escape" data-code="27">ESC</div>
   <div class="kb" data-key="Enter" data-code="13">ENTER</div>
 </div>
@@ -37,30 +38,19 @@
 <script>
 (function(){
 const codes = {ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
-               Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter"};
-const logEl = document.getElementById("log");
-function log(m){ logEl.textContent += m + "\n"; }
-window.addEventListener("error", e => log("ERR: " + e.message + " | " + (e.filename||"") + ":" + e.lineno + " " + (e.error && e.error.stack ? e.error.stack.slice(0,150) : "")));
-window.addEventListener("unhandledrejection", e => log("REJECT: " + (e.reason && e.reason.message || e.reason)));
-log("UA: " + navigator.userAgent.replace(/.*Chrome\//,"Chrome/").slice(0,40));
-log("wasm=" + (typeof WebAssembly) + " sab=" + (typeof SharedArrayBuffer) + " worker=" + (typeof Worker)
-  + " opfs=" + !!(navigator.storage && navigator.storage.getDirectory) + " idb=" + (typeof indexedDB));
-fetch("game.jsdos").then(r => r.blob().then(b => log("game.jsdos status=" + r.status + " size=" + b.size)))
-  .catch(e => log("game.jsdos FETCH FAIL: " + e));
+               Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter",F1:"F1",F2:"F2"};
 const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://v8.js-dos.com/latest/js-dos.css";
 document.head.appendChild(css);
 const sc = document.createElement("script"); sc.src = "https://v8.js-dos.com/latest/js-dos.js";
 sc.crossOrigin = "anonymous";
-sc.onerror = () => log("js-dos.js FAILED to load");
-sc.onload = () => {
-  log("js-dos.js loaded, Dos=" + typeof Dos);
-  try { Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true, kiosk: true, renderAspect: "Fit"}); log("Dos() started"); }
-  catch (e) { log("Dos() ERROR: " + e); }
-  setTimeout(() => log("canvas present=" + !!document.querySelector("#dos canvas")), 8000);
-};
+let ci = null;
+const glfw = {ArrowLeft:263,ArrowRight:262,ArrowDown:264,ArrowUp:265,Escape:256,Enter:257,F1:290,F2:291,Control:341,Alt:342};
+sc.onload = () => Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true, kiosk: true, renderAspect: "Fit",
+  onEvent: (ev, c) => { if (ev === "ci-ready") ci = c; }});
 document.head.appendChild(sc);
 
 function sendKey(type, key, kc) {
+  if (ci && glfw[key]) { ci.sendKeyEvent(glfw[key], type === "keydown"); return; }
   const target = document.querySelector("#dos canvas") || document.querySelector("#dos") || document;
   const ev = new KeyboardEvent(type, {key, code: codes[key], keyCode: kc, which: kc, bubbles: true, cancelable: true});
   Object.defineProperty(ev, "keyCode", {get: () => kc});
