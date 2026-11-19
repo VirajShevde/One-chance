@@ -11,7 +11,7 @@
        color:#fff;font:700 5vmin sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1}
   .btn.on{background:#ffffff66}
   .small{font-size:2.6vmin}
-  #top{position:absolute;bottom:3vh;left:50%;transform:translateX(-50%);display:flex;gap:1.5vw;z-index:10}
+  #top{position:absolute;bottom:calc(3vh + 16vmin);right:2vw;display:flex;gap:1.5vw;z-index:10}
   #top .btn{width:9vmin;height:9vmin;font-size:2.4vmin}
   body.clean .btn{background:none;border-color:transparent;color:transparent}
   #tg{position:absolute;top:0;left:0;width:8vmin;height:8vmin;z-index:20}
@@ -43,4 +43,36 @@ function log(m){ logEl.textContent += m + "\n"; }
 window.addEventListener("error", e => log("ERR: " + e.message));
 window.addEventListener("unhandledrejection", e => log("REJECT: " + (e.reason && e.reason.message || e.reason)));
 log("online=" + navigator.onLine);
-fetch("game.jsdos").then(r
+fetch("game.jsdos").then(r => r.blob().then(b => log("game.jsdos status=" + r.status + " size=" + b.size)))
+  .catch(e => log("game.jsdos FETCH FAIL: " + e));
+const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://v8.js-dos.com/latest/js-dos.css";
+document.head.appendChild(css);
+const sc = document.createElement("script"); sc.src = "https://v8.js-dos.com/latest/js-dos.js";
+sc.onerror = () => log("js-dos.js FAILED to load (no internet or blocked)");
+sc.onload = () => {
+  log("js-dos.js loaded, Dos=" + typeof Dos);
+  try { Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true}); log("Dos() started"); }
+  catch (e) { log("Dos() ERROR: " + e); }
+  setTimeout(() => log("canvas present=" + !!document.querySelector("#dos canvas")), 8000);
+};
+document.head.appendChild(sc);
+
+function sendKey(type, key, kc) {
+  const target = document.querySelector("#dos canvas") || document.querySelector("#dos") || document;
+  const ev = new KeyboardEvent(type, {key, code: codes[key], keyCode: kc, which: kc, bubbles: true, cancelable: true});
+  Object.defineProperty(ev, "keyCode", {get: () => kc});
+  Object.defineProperty(ev, "which", {get: () => kc});
+  target.dispatchEvent(ev);
+}
+
+document.querySelectorAll(".btn").forEach(b => {
+  const k = b.dataset.key, c = +b.dataset.code;
+  const down = e => { e.preventDefault(); b.classList.add("on"); sendKey("keydown", k, c); };
+  const up   = e => { e.preventDefault(); b.classList.remove("on"); sendKey("keyup", k, c); };
+  b.addEventListener("touchstart", down, {passive:false});
+  b.addEventListener("touchend", up, {passive:false});
+  b.addEventListener("touchcancel", up, {passive:false});
+});
+document.getElementById("tg").addEventListener("touchstart", () => document.body.classList.toggle("clean"));
+</script>
+</body></html>
