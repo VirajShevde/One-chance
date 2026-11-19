@@ -5,53 +5,55 @@
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
   #dos{position:absolute;inset:0}
-  .pad{position:absolute;bottom:3vh;display:flex;gap:1.5vw;z-index:10}
-  #left{left:2vw} #right{right:2vw}
-  .btn{width:14vmin;height:14vmin;border-radius:50%;border:2px solid #fff6;background:#ffffff1f;
-       color:#fff;font:700 5vmin sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1}
-  .btn.on{background:#ffffff66}
-  .small{font-size:2.6vmin}
-  #top{position:absolute;bottom:calc(3vh + 16vmin);right:2vw;display:flex;gap:1.5vw;z-index:10}
-  #top .btn{width:9vmin;height:9vmin;font-size:2.4vmin}
-  body.clean .btn{background:none;border-color:transparent;color:transparent}
-  #tg{position:absolute;top:0;left:0;width:8vmin;height:8vmin;z-index:20}
+  .kpad{position:absolute;bottom:3vh;display:flex;gap:1.5vw;z-index:10}
+  #kleft{left:2vw} #kright{right:2vw}
+  .kb{width:14vmin;height:14vmin;border-radius:50%;border:2px solid #fff6;background:#ffffff1f;
+      color:#fff;font:700 5vmin sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1}
+  .kb.kon{background:#ffffff66}
+  .ksm{font-size:2.6vmin}
+  #ktop{position:absolute;bottom:calc(3vh + 16vmin);right:2vw;display:flex;gap:1.5vw;z-index:10}
+  #ktop .kb{width:9vmin;height:9vmin;font-size:2.4vmin}
+  body.kclean .kb{background:none;border-color:transparent;color:transparent}
+  #ktg{position:absolute;top:0;left:0;width:8vmin;height:8vmin;z-index:20}
 </style></head>
 <body>
 <div id="dos"></div>
 <pre id="log" style="position:absolute;top:2vh;left:10vmin;right:30vw;margin:0;z-index:30;color:#0f0;font:13px monospace;white-space:pre-wrap;pointer-events:none"></pre>
-<div id="tg"></div>
-<div id="top">
-  <div class="btn" data-key="Escape" data-code="27">ESC</div>
-  <div class="btn" data-key="Enter" data-code="13">ENTER</div>
+<div id="ktg"></div>
+<div id="ktop">
+  <div class="kb" data-key="Escape" data-code="27">ESC</div>
+  <div class="kb" data-key="Enter" data-code="13">ENTER</div>
 </div>
-<div class="pad" id="left">
-  <div class="btn" data-key="ArrowLeft" data-code="37">◀</div>
-  <div class="btn" data-key="ArrowRight" data-code="39">▶</div>
+<div class="kpad" id="kleft">
+  <div class="kb" data-key="ArrowLeft" data-code="37">◀</div>
+  <div class="kb" data-key="ArrowRight" data-code="39">▶</div>
 </div>
-<div class="pad" id="right">
-  <div class="btn" data-key="ArrowUp" data-code="38">▲</div>
-  <div class="btn" data-key="ArrowDown" data-code="40">▼</div>
-  <div class="btn small" data-key="Control" data-code="17">CTRL<br>jump</div>
-  <div class="btn small" data-key="Alt" data-code="18">ALT<br>fire</div>
+<div class="kpad" id="kright">
+  <div class="kb" data-key="ArrowUp" data-code="38">▲</div>
+  <div class="kb" data-key="ArrowDown" data-code="40">▼</div>
+  <div class="kb ksm" data-key="Control" data-code="17">CTRL<br>jump</div>
+  <div class="kb ksm" data-key="Alt" data-code="18">ALT<br>fire</div>
 </div>
 <script>
 const codes = {ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
                Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter"};
-
 const logEl = document.getElementById("log");
 function log(m){ logEl.textContent += m + "\n"; }
-window.addEventListener("error", e => log("ERR: " + e.message));
+window.addEventListener("error", e => log("ERR: " + e.message + " | " + (e.filename||"") + ":" + e.lineno + " " + (e.error && e.error.stack ? e.error.stack.slice(0,150) : "")));
 window.addEventListener("unhandledrejection", e => log("REJECT: " + (e.reason && e.reason.message || e.reason)));
-log("online=" + navigator.onLine);
+log("UA: " + navigator.userAgent.replace(/.*Chrome\//,"Chrome/").slice(0,40));
+log("wasm=" + (typeof WebAssembly) + " sab=" + (typeof SharedArrayBuffer) + " worker=" + (typeof Worker)
+  + " opfs=" + !!(navigator.storage && navigator.storage.getDirectory) + " idb=" + (typeof indexedDB));
 fetch("game.jsdos").then(r => r.blob().then(b => log("game.jsdos status=" + r.status + " size=" + b.size)))
   .catch(e => log("game.jsdos FETCH FAIL: " + e));
 const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://v8.js-dos.com/latest/js-dos.css";
 document.head.appendChild(css);
 const sc = document.createElement("script"); sc.src = "https://v8.js-dos.com/latest/js-dos.js";
-sc.onerror = () => log("js-dos.js FAILED to load (no internet or blocked)");
+sc.crossOrigin = "anonymous";
+sc.onerror = () => log("js-dos.js FAILED to load");
 sc.onload = () => {
   log("js-dos.js loaded, Dos=" + typeof Dos);
-  try { Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true}); log("Dos() started"); }
+  try { Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true, kiosk: true, renderAspect: "Fit"}); log("Dos() started"); }
   catch (e) { log("Dos() ERROR: " + e); }
   setTimeout(() => log("canvas present=" + !!document.querySelector("#dos canvas")), 8000);
 };
@@ -64,15 +66,14 @@ function sendKey(type, key, kc) {
   Object.defineProperty(ev, "which", {get: () => kc});
   target.dispatchEvent(ev);
 }
-
-document.querySelectorAll(".btn").forEach(b => {
+document.querySelectorAll(".kb").forEach(b => {
   const k = b.dataset.key, c = +b.dataset.code;
-  const down = e => { e.preventDefault(); b.classList.add("on"); sendKey("keydown", k, c); };
-  const up   = e => { e.preventDefault(); b.classList.remove("on"); sendKey("keyup", k, c); };
+  const down = e => { e.preventDefault(); b.classList.add("kon"); sendKey("keydown", k, c); };
+  const up   = e => { e.preventDefault(); b.classList.remove("kon"); sendKey("keyup", k, c); };
   b.addEventListener("touchstart", down, {passive:false});
   b.addEventListener("touchend", up, {passive:false});
   b.addEventListener("touchcancel", up, {passive:false});
 });
-document.getElementById("tg").addEventListener("touchstart", () => document.body.classList.toggle("clean"));
+document.getElementById("ktg").addEventListener("touchstart", () => document.body.classList.toggle("kclean"));
 </script>
 </body></html>
