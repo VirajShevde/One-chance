@@ -5,20 +5,25 @@
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
   #dos{position:absolute;inset:0}
-  .kpad{position:absolute;bottom:3vh;display:flex;gap:1.5vw;z-index:10}
-  #kleft{left:2vw} #kright{right:2vw}
   .kb{width:14vmin;height:14vmin;border-radius:50%;border:2px solid #fff6;background:#ffffff1f;
       color:#fff;font:700 5vmin sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1}
   .kb.kon{background:#ffffff66}
   .ksm{font-size:2.6vmin}
+  #kright{position:absolute;right:2vw;bottom:3vh;display:flex;gap:1.5vw;z-index:10}
   #ktop{position:absolute;bottom:calc(3vh + 16vmin);right:2vw;display:flex;gap:1.5vw;z-index:10}
   #ktop .kb{width:9vmin;height:9vmin;font-size:2.4vmin}
-  body.kclean .kb{background:none;border-color:transparent;color:transparent}
+  #stick{position:absolute;left:3vw;bottom:3vh;width:26vmin;height:26vmin;border-radius:50%;
+         background:#ffffff1f;border:2px solid #fff6;z-index:10}
+  #knob{position:absolute;left:50%;top:50%;width:11vmin;height:11vmin;margin:-5.5vmin;
+        border-radius:50%;background:#ffffff66}
+  body.kclean .kb,body.kclean #stick{background:none;border-color:transparent;color:transparent}
+  body.kclean #knob{background:none}
   #ktg{position:absolute;top:0;left:0;width:8vmin;height:8vmin;z-index:20}
 </style></head>
 <body>
 <div id="dos"></div>
 <div id="ktg"></div>
+
 <div id="ktop">
   <div class="kb" data-key="F1" data-code="112">F1</div>
   <div class="kb" data-key="F2" data-code="113">F2</div>
@@ -27,48 +32,86 @@
   <div class="kb" data-key="Escape" data-code="27">ESC</div>
   <div class="kb" data-key="Enter" data-code="13">ENTER</div>
 </div>
-<div class="kpad" id="kleft">
-  <div class="kb" data-key="ArrowLeft" data-code="37">◀</div>
-  <div class="kb" data-key="ArrowRight" data-code="39">▶</div>
-</div>
-<div class="kpad" id="kright">
-  <div class="kb" data-key="ArrowUp" data-code="38">▲</div>
-  <div class="kb" data-key="ArrowDown" data-code="40">▼</div>
+
+<div id="stick"><div id="knob"></div></div>
+
+<div id="kright">
   <div class="kb ksm" data-key="Control" data-code="17">CTRL<br>jump</div>
   <div class="kb ksm" data-key="Alt" data-code="18">ALT<br>fire</div>
 </div>
+
 <script>
 (function(){
 const codes = {ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
                Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter",F1:"F1",F2:"F2",F3:"F3",F4:"F4"};
-const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://v8.js-dos.com/latest/js-dos.css";
-document.head.appendChild(css);
-const sc = document.createElement("script"); sc.src = "https://v8.js-dos.com/latest/js-dos.js";
-sc.crossOrigin = "anonymous";
+const glfw = {ArrowLeft:263,ArrowRight:262,ArrowDown:264,ArrowUp:265,Escape:256,Enter:257,
+              F1:290,F2:291,F3:292,F4:293,Control:341,Alt:342};
 let ci = null;
-const glfw = {ArrowLeft:263,ArrowRight:262,ArrowDown:264,ArrowUp:265,Escape:256,Enter:257,F1:290,F2:291,F3:292,F4:293,Control:341,Alt:342};
-sc.onload = () => Dos(document.getElementById("dos"), {url: "game.jsdos", autoStart: true, kiosk: true, renderAspect: "Fit",
-  onEvent: (ev, c) => { if (ev === "ci-ready") ci = c; }});
+
+const css = document.createElement("link");
+css.rel = "stylesheet"; css.href = "https://v8.js-dos.com/latest/js-dos.css";
+document.head.appendChild(css);
+
+const sc = document.createElement("script");
+sc.src = "https://v8.js-dos.com/latest/js-dos.js";
+sc.crossOrigin = "anonymous";
+sc.onload = () => Dos(document.getElementById("dos"), {
+  url: "game.jsdos", autoStart: true, kiosk: true, renderAspect: "Fit",
+  onEvent: (ev, c) => { if (ev === "ci-ready") ci = c; }
+});
 document.head.appendChild(sc);
 
 function sendKey(type, key, kc) {
   if (ci && glfw[key]) { ci.sendKeyEvent(glfw[key], type === "keydown"); return; }
+  const down = type === "keydown";
   const target = document.querySelector("#dos canvas") || document.querySelector("#dos") || document;
-  const ev = new KeyboardEvent(type, {key, code: codes[key], keyCode: kc, which: kc, bubbles: true, cancelable: true});
+  const ev = new KeyboardEvent(type, {key, code: codes[key], keyCode: kc, which: kc,
+    ctrlKey: key === "Control" && down, altKey: key === "Alt" && down,
+    bubbles: true, cancelable: true});
   Object.defineProperty(ev, "keyCode", {get: () => kc});
   Object.defineProperty(ev, "which", {get: () => kc});
   target.dispatchEvent(ev);
 }
+
+// Round buttons (hold at least 150ms so the game's polling sees the key)
 document.querySelectorAll(".kb").forEach(b => {
   const k = b.dataset.key, c = +b.dataset.code;
   let t0 = 0;
   const down = e => { e.preventDefault(); t0 = Date.now(); b.classList.add("kon"); sendKey("keydown", k, c); };
-  const up   = e => { e.preventDefault(); b.classList.remove("kon");
+  const up = e => { e.preventDefault(); b.classList.remove("kon");
     setTimeout(() => sendKey("keyup", k, c), Math.max(0, 150 - (Date.now() - t0))); };
   b.addEventListener("touchstart", down, {passive:false});
   b.addEventListener("touchend", up, {passive:false});
   b.addEventListener("touchcancel", up, {passive:false});
 });
+
+// Thumbstick -> arrow keys (tracks its own finger, so the other thumb can press jump/fire)
+(function(){
+  const st = document.getElementById("stick"), kn = document.getElementById("knob");
+  const map = {ArrowLeft:37, ArrowRight:39, ArrowUp:38, ArrowDown:40};
+  const on = {};
+  let id = null;
+  function set(key, v){ if (!!on[key] === v) return; on[key] = v; sendKey(v ? "keydown" : "keyup", key, map[key]); }
+  function find(e){ for (const t of e.touches) if (t.identifier === id) return t; return null; }
+  function move(t){
+    const r = st.getBoundingClientRect();
+    let dx = t.clientX - (r.left + r.width/2), dy = t.clientY - (r.top + r.height/2);
+    const max = r.width/2, len = Math.hypot(dx, dy);
+    if (len > max) { dx *= max/len; dy *= max/len; }
+    kn.style.transform = `translate(${dx}px,${dy}px)`;
+    const dz = max * 0.3;
+    set("ArrowLeft", dx < -dz); set("ArrowRight", dx > dz);
+    set("ArrowUp", dy < -dz);   set("ArrowDown", dy > dz);
+  }
+  function release(){ id = null; kn.style.transform = ""; Object.keys(map).forEach(k => set(k, false)); }
+  st.addEventListener("touchstart", e => { e.preventDefault(); if (id === null) { id = e.changedTouches[0].identifier; move(e.changedTouches[0]); } }, {passive:false});
+  st.addEventListener("touchmove", e => { e.preventDefault(); const t = find(e); if (t) move(t); }, {passive:false});
+  const end = e => { e.preventDefault(); if (!find(e)) release(); };
+  st.addEventListener("touchend", end, {passive:false});
+  st.addEventListener("touchcancel", end, {passive:false});
+})();
+
+// Tap the top-left corner to hide/show the overlay
 document.getElementById("ktg").addEventListener("touchstart", () => document.body.classList.toggle("kclean"));
 })();
 </script>
