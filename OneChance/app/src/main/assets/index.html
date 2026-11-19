@@ -35,6 +35,7 @@
   <div class="kb ksm" data-key="Alt" data-code="18">ALT<br>fire</div>
 </div>
 <script>
+(function(){
 const codes = {ArrowLeft:"ArrowLeft",ArrowRight:"ArrowRight",ArrowUp:"ArrowUp",ArrowDown:"ArrowDown",
                Control:"ControlLeft",Alt:"AltLeft",Escape:"Escape",Enter:"Enter"};
 const logEl = document.getElementById("log");
@@ -75,5 +76,6 @@ document.querySelectorAll(".kb").forEach(b => {
   b.addEventListener("touchcancel", up, {passive:false});
 });
 document.getElementById("ktg").addEventListener("touchstart", () => document.body.classList.toggle("kclean"));
+})();
 </script>
 </body></html>
